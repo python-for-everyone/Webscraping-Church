@@ -1,0 +1,123 @@
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+import csv
+from operator import add
+
+
+url = 'https://dphx.org/parishes/'
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'}
+page = requests.get(url,headers=headers)
+soup = BeautifulSoup(page.text, 'html.parser')
+
+links =[]
+
+
+for pastor_names in soup.find_all('div',class_="parish-title"):
+    title = pastor_names.find('a')
+    individual_title=title.get('href')
+    links.append(individual_title)
+
+
+header=['Name','Address','Pastor','Priest','Telephone','Email']
+
+
+def main():
+    for link in links:
+
+        page = requests.get(link, headers=headers)
+        soup = BeautifulSoup(page.text, 'html.parser')
+
+        list_one = []
+        list_two = []
+        priest_list = []
+
+        pastor_list = []
+        list_csv = []
+
+
+        def institution_address():
+            global name
+            name = soup.find(class_="entry-title").get_text()
+            address= soup.find(itemprop="streetAddress").get_text()
+
+            address_1= soup.find(itemprop="addressLocality").get_text()
+            address_2= soup.find(itemprop = "addressRegion").get_text()
+            address_3= soup.find(itemprop = "postalCode").get_text()
+            global address_full
+            address_full = address+'\n'+address_1+', '+ address_2+' '+address_3
+
+
+        def pastor():
+                pastor = soup.find_all('span', itemprop="name")
+                for item in pastor:
+                    pastor_list.append(item.get_text())
+
+        def priest():
+            nonlocal priest_list
+
+            try:
+                first = soup.find_all('span', itemprop="givenName")
+                last = soup.find_all('span', itemprop="familyName")
+
+                for item in first:
+                    first= str(item.get_text())
+                    nonlocal list_one
+                    list_one.append(first)
+                for item in last:
+                    last=str(item.get_text())
+                    nonlocal list_two
+                    list_two.append(last)
+                trans= list(map(str.__add__, list_one, list_two))
+                priest_list=trans
+
+
+            except AttributeError:
+                pass
+
+        def telephone():
+
+            phone_=soup.find('span', itemprop="telephone")
+            global phone_var
+            phone_var= phone_.get_text()
+
+        def web_address():
+            try:
+                web_address_= soup.find('span', itemprop="sameAs")
+                global web_address_var
+                web_address_var= web_address_.get_text()
+
+            except AttributeError:
+                pass
+
+        institution_address()
+        pastor()
+        priest()
+        telephone()
+        web_address()
+
+
+        list_csv.extend([name, address_full, pastor_list, priest_list, phone_var, web_address_var])
+        var = open('Church_Info.csv', 'a')
+
+        with var as f:
+            writer = csv.writer(f)
+            if var.tell() == 0:
+                writer.writerow(header)
+            else:
+                writer.writerow([list_csv[0], list_csv[1], list_csv[2], list_csv[3], list_csv[4], list_csv[5]])
+
+        if len(pastor_list) != 0:
+            del pastor_list
+        if len(list_one) != 0:
+            del list_one
+        if len(list_two) != 0:
+            del list_two
+        if len(priest_list) != 0:
+            del priest_list
+        if len(list_csv) != 0:
+            del list_csv
+
+
+main()
