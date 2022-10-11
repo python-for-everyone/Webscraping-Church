@@ -1,9 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
 import csv
-from operator import add
 
 
 url = 'https://dphx.org/parishes/'
@@ -69,7 +66,7 @@ def main():
                     last=str(item.get_text())
                     nonlocal list_two
                     list_two.append(last)
-                trans= list(map(str.__add__, list_one, list_two))
+                trans= list(map(str.__add__, list_one , list_two))
                 priest_list=trans
 
 
@@ -97,9 +94,16 @@ def main():
         telephone()
         web_address()
 
+        new_pastor_list = (', '.join(pastor_list))
+        print("After removing bracket", new_pastor_list)
 
-        list_csv.extend([name, address_full, pastor_list, priest_list, phone_var, web_address_var])
-        var = open('Church_Info.csv', 'a')
+        new_priest_list = (', '.join(priest_list))
+        print("After removing bracket", new_priest_list)
+
+
+
+        list_csv.extend([name, address_full, new_pastor_list, new_priest_list, phone_var, web_address_var])
+        var = open('Church_info_final2.csv', 'a')
 
         with var as f:
             writer = csv.writer(f)
@@ -108,16 +112,20 @@ def main():
             else:
                 writer.writerow([list_csv[0], list_csv[1], list_csv[2], list_csv[3], list_csv[4], list_csv[5]])
 
-        if len(pastor_list) != 0:
-            del pastor_list
+        if len(new_pastor_list) != 0:
+            del new_pastor_list
+        if len(new_priest_list) != 0:
+            del new_priest_list
         if len(list_one) != 0:
             del list_one
         if len(list_two) != 0:
             del list_two
-        if len(priest_list) != 0:
-            del priest_list
         if len(list_csv) != 0:
             del list_csv
 
 
 main()
+
+
+
+
